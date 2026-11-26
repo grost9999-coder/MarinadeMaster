@@ -16,7 +16,7 @@ struct InventoryView: View {
                     if items.isEmpty {
                         ContentUnavailableView("尚無庫存原料", systemImage: "shippingbox", description: Text("先新增原料，再登記進貨。"))
                     }
-                    ForEach(Array(items), id: \\InventoryItem.id) { item in
+                    ForEach(Array(items), id: \InventoryItem.id) { item in
                         HStack {
                             Button { selectedItem = item } label: {
                                 VStack(alignment: .leading, spacing: 4) {
@@ -39,7 +39,7 @@ struct InventoryView: View {
                     }
                 }
                 Section("進貨紀錄") {
-                    ForEach(Array(purchases.prefix(30)), id: \\InventoryPurchase.id) { purchase in
+                    ForEach(Array(purchases.prefix(30)), id: \InventoryPurchase.id) { purchase in
                         VStack(alignment: .leading, spacing: 3) {
                             HStack {
                                 Text(purchase.itemName).font(.subheadline.weight(.semibold))
