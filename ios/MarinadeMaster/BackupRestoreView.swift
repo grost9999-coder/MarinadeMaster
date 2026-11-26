@@ -40,6 +40,7 @@ struct BatchBackup: Codable {
     var stageTimes: [String: Date]
     var createdAt: Date
     var photos: [PhotoBackup]
+    var costSnapshot: [BatchCostSnapshotLine]?
 
     init(_ batch: BatchRecord) {
         code = batch.code
@@ -50,6 +51,7 @@ struct BatchBackup: Codable {
         stageTimes = batch.stageTimes
         createdAt = batch.createdAt
         photos = batch.photos.map(PhotoBackup.init)
+        costSnapshot = batch.costSnapshot
     }
 }
 
@@ -258,6 +260,7 @@ struct BackupRestoreView: View {
                 let batch = BatchRecord(code: item.code, snapshot: snapshot)
                 batch.createdAt = item.createdAt
                 batch.stageTimes = item.stageTimes
+                batch.costSnapshot = item.costSnapshot ?? []
                 for photoItem in item.photos {
                     let photo = BatchPhoto(imageData: photoItem.imageData, caption: photoItem.caption)
                     photo.batch = batch
