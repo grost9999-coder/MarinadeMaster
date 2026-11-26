@@ -117,6 +117,9 @@ begin
   end loop;
 end $$;
 
+grant usage on schema public to authenticated;
+grant select, insert, update, delete on public.recipes, public.ingredients, public.purchases, public.batches, public.inventory_ledger, public.batch_photos, public.workspace_snapshots to authenticated;
+
 create index if not exists recipes_owner_name_idx on public.recipes(owner_id, name);
 create index if not exists batches_owner_created_idx on public.batches(owner_id, created_at desc);
 create index if not exists purchases_owner_date_idx on public.purchases(owner_id, purchase_date desc);
