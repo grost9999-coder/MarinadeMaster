@@ -23,8 +23,10 @@ struct InventoryView: View {
                                     HStack {
                                         Text(item.name).font(.headline)
                                         Spacer()
-                                        Text("\(item.onHand.formatted()) \(item.unit)")
-                                            .foregroundStyle(item.onHand > 0 ? .primary : .orange)
+                                        Text(item.onHand, format: .number)
+                                        Text(" " + item.unit)
+                                    }
+                                    .foregroundColor(item.onHand > 0 ? Color.primary : Color.orange)
                                     }
                                     HStack(spacing: 3) {
                                         Text("平均單位成本：")
