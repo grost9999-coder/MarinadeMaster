@@ -20,12 +20,17 @@
 - 原料成本支援 g／kg 換算，缺少單價時標示待補，不猜測成本。
 - 批次報表列印／另存 PDF、JSON 備份與匯入。
 
+## iPhone 原生 App 開發進度
+- 已建立 `ios/MarinadeMaster.xcodeproj`，使用 SwiftUI／SwiftData 本機資料庫；目前含歷史配方、配方編輯另存版本、重量換算、批次快照、製程時間與相簿照片本機儲存／刪除。
+- 原生 App 尚未完成庫存採購成本、相機即時拍攝、完整備份匯出／還原；尚未由 Xcode 編譯、iPhone 實機測試或 TestFlight 簽署。
+- 已新增 macOS GitHub Actions iOS 編譯工作流程，需以實際 Actions 結果確認編譯狀態。
+
 ## 重要限制
 - 資料目前儲存在單一瀏覽器的 localStorage，不是雲端資料庫；不同裝置不會自動同步。
 - 已加入 PWA Service Worker 與 GitHub Pages 部署工作流程；正式網址需等待 GitHub Actions 部署成功後才可確認。
 - 照片目前壓縮後以 base64 儲存在瀏覽器 localStorage，單張壓縮後限制約 900KB，仍會受瀏覽器總儲存容量限制；請定期匯出包含照片的 JSON 備份。尚未使用雲端物件儲存。
 - 採購進貨、退貨與盤點目前採提示視窗操作；完整採購表單、供應商主檔及多層權限仍待後續優化。
-- 尚未完成多人登入、雲端同步、正式部署、完整原生 iOS App、TestFlight 或 App Store 上架。
+- 雲端功能依使用者決定暫停；尚未確認 GitHub Pages 正式部署成功，也尚未完成原生 iOS App 全功能、TestFlight 或 App Store 上架。
 - 配方編輯器、頁內照片相簿、照片刪除與附照片批次報表已提交；完成 inline JavaScript 語法檢查，尚未宣稱完成真實瀏覽器／iPhone 實機測試。
 - 使用前請先匯出 JSON 備份；清除瀏覽器網站資料可能導致本機資料遺失。
 
