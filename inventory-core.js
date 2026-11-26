@@ -52,4 +52,5 @@
     return item;
   }
   root.InventoryCore={toUnit,weightedAverage,captureCosts,calculateCost,applyPurchase,consumeStock};
+  if(typeof module!=="undefined"&&module.exports)module.exports=root.InventoryCore;
 })(typeof globalThis!=="undefined"?globalThis:this);
