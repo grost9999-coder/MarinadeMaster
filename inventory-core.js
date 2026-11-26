@@ -17,7 +17,7 @@
     const snap={};
     for(const group of groups||[])for(const item of group.items||[]){
       const name=item[0],s=(stock||[]).find(x=>x.name===name);
-      if(s&&Number.isFinite(+s.price)&&s.price>=0)snap[name]={unit:s.unit,price:+s.price};
+      if(s&&Number.isFinite(+s.price)&&s.price>=0)snap[name]={unit:s.unit,price:+s.price};else snap[name]={missing:true};
     }
     return snap;
   }
@@ -26,8 +26,9 @@
     for(const group of groups||[])for(const item of group.items||[]){
       const [name,qty,unit]=item;
       const current=(stock||[]).find(x=>x.name===name);
-      const chosen=snapshot&&snapshot[name]?snapshot[name]:current;
-      if(!chosen||!(+chosen.price>0)||!["g","kg"].includes(chosen.unit)){missing.push(name);continue;}
+      const hasSnapshot=!!(snapshot&&Object.prototype.hasOwnProperty.call(snapshot,name));
+      const chosen=hasSnapshot?snapshot[name]:current;
+      if(!chosen||chosen.missing||!Number.isFinite(+chosen.price)||+chosen.price<0||!["g","kg"].includes(chosen.unit)){missing.push(name);continue;}
       const amount=toUnit(+qty,unit,chosen.unit);
       if(amount===null){missing.push(name);continue;}
       total+=amount*(+chosen.price);
