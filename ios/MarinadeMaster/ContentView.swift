@@ -455,7 +455,7 @@ struct CameraPicker: UIViewControllerRepresentable {
         }
 
         func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-            parent.dismiss.wrappedValue.dismiss()
+            parent.dismiss()
         }
     }
 }
