@@ -298,7 +298,7 @@ struct BatchDetailView: View {
                         Button(role: .destructive) { context.delete(photo) } label: { Image(systemName: "trash") }
                     }
                 }
-                .onDelete { offsets in offsets.map { batch.photos[$0] }.forEach(context.delete) }
+                .onDelete { offsets in for offset in offsets { context.delete(batch.photos[offset]) } }
             }
         }
         .navigationTitle(batch.code)
@@ -306,8 +306,14 @@ struct BatchDetailView: View {
             guard let item else { return }
             Task {
                 guard let data = try? await item.loadTransferable(type: Data.self),
-                      let image = UIImage(data: data),
-                      let compressed = image.jpegData(compressionQuality: 0.72) else { return }
+                      let image = UIImage(data: data) else { return }
+                let maxDimension: CGFloat = 1600
+                let scale = min(1, maxDimension / max(image.size.width, image.size.height))
+                let targetSize = CGSize(width: image.size.width * scale, height: image.size.height * scale)
+                let renderer = UIGraphicsImageRenderer(size: targetSize)
+                let compressed = renderer.jpegData(withCompressionQuality: 0.72) { _ in
+                    image.draw(in: CGRect(origin: .zero, size: targetSize))
+                }
                 let photo = BatchPhoto(imageData: compressed, caption: caption)
                 photo.batch = batch
                 batch.photos.append(photo)
