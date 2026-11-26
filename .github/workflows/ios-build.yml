@@ -1,0 +1,19 @@
+name: MarinadeMaster iOS build
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ios/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'ios/**'
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Show Xcode version
+        run: xcodebuild -version
+      - name: Build iOS Simulator target
+        run: xcodebuild -project ios/MarinadeMaster.xcodeproj -scheme MarinadeMaster -sdk iphonesimulator -configuration Debug CODE_SIGNING_ALLOWED=NO build
