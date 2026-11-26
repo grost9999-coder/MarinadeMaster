@@ -302,6 +302,7 @@ struct BatchDetailView: View {
     @State private var selectedPhoto: PhotosPickerItem?
     @State private var cameraImage: UIImage?
     @State private var showCamera = false
+    @State private var showCameraUnavailable = false
     @State private var caption = "生產照片"
 
     private let stages = ["退冰", "醃製", "裹粉", "完成"]
@@ -392,6 +393,11 @@ struct BatchDetailView: View {
         .sheet(isPresented: $showCamera) {
             CameraPicker(image: $cameraImage)
         }
+        .alert("此裝置沒有可用相機", isPresented: $showCameraUnavailable) {
+            Button("確定", role: .cancel) {}
+        } message: {
+            Text("可改用「從相簿選取照片」加入批次紀錄。")
+        }
         .onChange(of: cameraImage) { _, image in
             guard let image else { return }
             savePhoto(image)
@@ -445,7 +451,7 @@ struct CameraPicker: UIViewControllerRepresentable {
 
         func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
             parent.image = info[.originalImage] as? UIImage
-            parent.dismiss.wrappedValue.dismiss()
+            parent.dismiss()
         }
 
         func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
