@@ -26,8 +26,12 @@ struct InventoryView: View {
                                         Text("\(item.onHand.formatted()) \(item.unit)")
                                             .foregroundStyle(item.onHand > 0 ? .primary : .orange)
                                     }
-                                    Text("平均單位成本：\(item.averageCost.formatted(.currency(code: "TWD")))/\(item.unit)")
-                                        .font(.caption).foregroundStyle(.secondary)
+                                    HStack(spacing: 3) {
+                                        Text("平均單位成本：")
+                                        Text(item.averageCost, format: .currency(code: "TWD"))
+                                        Text("/" + item.unit)
+                                    }
+                                    .font(.caption).foregroundStyle(.secondary)
                                 }
                             }.buttonStyle(.plain)
                             Button(role: .destructive) {
