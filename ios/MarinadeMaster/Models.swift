@@ -127,3 +127,45 @@ final class BatchPhoto {
         self.createdAt = .now
     }
 }
+@Model
+final class InventoryItem {
+    var id: UUID
+    var name: String
+    var unit: String
+    var onHand: Double
+    var averageCost: Double
+    var updatedAt: Date
+
+    init(name: String, unit: String, onHand: Double = 0, averageCost: Double = 0) {
+        self.id = UUID()
+        self.name = name
+        self.unit = unit
+        self.onHand = onHand
+        self.averageCost = averageCost
+        self.updatedAt = .now
+    }
+}
+
+@Model
+final class InventoryPurchase {
+    var id: UUID
+    var itemName: String
+    var unit: String
+    var quantity: Double
+    var unitPrice: Double
+    var supplier: String
+    var note: String
+    var createdAt: Date
+    var totalCost: Double { quantity * unitPrice }
+
+    init(itemName: String, unit: String, quantity: Double, unitPrice: Double, supplier: String, note: String) {
+        self.id = UUID()
+        self.itemName = itemName
+        self.unit = unit
+        self.quantity = quantity
+        self.unitPrice = unitPrice
+        self.supplier = supplier
+        self.note = note
+        self.createdAt = .now
+    }
+}
