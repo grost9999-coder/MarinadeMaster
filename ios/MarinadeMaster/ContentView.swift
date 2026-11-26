@@ -242,7 +242,7 @@ struct CreateBatchView: View {
         }
 
         if !shortages.isEmpty {
-            shortageMessage = shortages.joined(separator: "\\n")
+            shortageMessage = shortages.joined(separator: "\n")
             showShortage = true
             return
         }
@@ -313,7 +313,8 @@ struct BatchDetailView: View {
             }
             if !batch.costSnapshot.isEmpty {
                 Section("批次原料成本快照") {
-                    ForEach(Array(batch.costSnapshot.enumerated()), id: \.offset) { _, line in
+                    ForEach(Array(batch.costSnapshot.enumerated()), id: \.offset) { entry in
+                        let line = entry.element
                         HStack {
                             VStack(alignment: .leading) {
                                 Text(line.ingredientName)
