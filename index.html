@@ -105,4 +105,5 @@ $('pdf').onclick=()=>{if(!$('report').value)return alert('尚無批次');batchPD
 $('export').onclick=()=>{let a=document.createElement('a'),u=URL.createObjectURL(new Blob([JSON.stringify(db,null,2)],{type:'application/json'}));a.href=u;a.download='MarinadeMaster-backup.json';a.click();URL.revokeObjectURL(u)};
 $('import').onchange=e=>{let f=e.target.files[0];if(!f)return;let rd=new FileReader();rd.onload=()=>{try{let x=InventoryCore.validateBackup(JSON.parse(rd.result));if(confirm('匯入會取代目前資料，確定？')){db=x;save()}}catch(err){alert('備份檔格式錯誤：'+err.message)}};rd.readAsText(f)};
 render();
+if('serviceWorker' in navigator && location.protocol==='https:'){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(err=>console.warn('Service worker registration failed',err)))}
 </script></body></html>
