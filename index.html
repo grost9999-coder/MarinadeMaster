@@ -40,7 +40,7 @@ $('newRecipe').onclick=()=>openRecipeEditor(null);
 let recipeDraft=null;
 window.openRecipeEditor=index=>{
  const source=index===null?{id:'',name:'',version:'v1',base:18,groups:[{name:'原料',items:[['',0,'g']]}],note:''}:JSON.parse(JSON.stringify(db.recipes[index]));
- if(index!==null){const same=db.recipes.filter(x=>x.name===source.name).length;source.id='';source.version='v'+(same+1)+'（編輯另存）'}
+ if(index!==null){const same=db.recipes.filter(x=>x.name===source.name).length;source.basedOnId=source.id;source.id='';source.version='v'+(same+1)+'（編輯另存）'}
  recipeDraft=source;renderRecipeEditor();
 };
 function renderRecipeEditor(){
@@ -57,7 +57,7 @@ window.saveRecipeDraft=()=>{
  const groups=recipeDraft.groups.map((g,gi)=>({name:document.querySelector('[data-group-name="'+gi+'"]').value.trim(),items:g.items.map((it,ii)=>{const key=gi+'-'+ii;return [document.querySelector('[data-item-name="'+key+'"]').value.trim(),+document.querySelector('[data-item-qty="'+key+'"]').value,document.querySelector('[data-item-unit="'+key+'"]').value]})}));
  if(!groups.length)return alert('至少需要一個原料群組。');
  for(const g of groups){if(!g.name)return alert('原料群組名稱不可空白。');for(const it of g.items){if(!it[0]||!(it[1]>0)||!['g','kg'].includes(it[2]))return alert('每筆原料都要有名稱、正數用量及 g／kg 單位。')}}
- db.recipes.push({id:'R'+Date.now(),name,version,base,groups,note,createdAt:new Date().toISOString(),basedOn:recipeDraft.id||null});
+ db.recipes.push({id:'R'+Date.now(),name,version,base,groups,note,createdAt:new Date().toISOString(),basedOn:recipeDraft.basedOnId||recipeDraft.id||null});
  recipeDraft=null;save();$('recipeEditor').classList.add('hide');alert('已另存為新配方版本，原始配方保持不變。');
 };
 let selectedPhotoBatch=null;
