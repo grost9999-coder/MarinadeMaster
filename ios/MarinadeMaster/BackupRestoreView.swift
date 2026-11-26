@@ -125,7 +125,7 @@ struct BackupRestoreView: View {
                 }
             }
             .navigationTitle("本機備份")
-            .fileExporter(isPresented: $showExporter, document: exportDocument, contentType: .json, defaultFilename: "MarinadeMaster-Backup-\(Date.now.formatted(.iso8601.year().month().day().dateSeparator(.dash)))") { result in
+            .fileExporter(isPresented: $showExporter, document: exportDocument, contentType: .json, defaultFilename: "MarinadeMaster-Backup-\(Date.now.formatted(.dateTime.year().month().day()))") { result in
                 switch result {
                 case .success(let url):
                     statusMessage = "備份已匯出：\(url.lastPathComponent)"
@@ -202,11 +202,14 @@ struct BackupRestoreView: View {
             for item in try context.fetch(FetchDescriptor<RecipeRecord>()) { context.delete(item) }
 
             for item in archive.recipes {
-                context.insert(RecipeRecord(name: item.name, version: item.version, baseKg: item.baseKg, note: item.note, ingredients: item.ingredients))
+                let recipe = RecipeRecord(name: item.name, version: item.version, baseKg: item.baseKg, note: item.note, ingredients: item.ingredients)
+                recipe.createdAt = item.createdAt
+                context.insert(recipe)
             }
             for item in archive.batches {
                 let snapshot = item.snapshot ?? BatchSnapshot(recipeName: item.recipeName, recipeVersion: item.recipeVersion, chickenKg: item.chickenKg, ingredients: [])
                 let batch = BatchRecord(code: item.code, snapshot: snapshot)
+                batch.createdAt = item.createdAt
                 batch.stageTimes = item.stageTimes
                 for photoItem in item.photos {
                     let photo = BatchPhoto(imageData: photoItem.imageData, caption: photoItem.caption)
