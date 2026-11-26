@@ -16,4 +16,14 @@ jobs:
       - name: Show Xcode version
         run: xcodebuild -version
       - name: Build iOS Simulator target
-        run: xcodebuild -project ios/MarinadeMaster.xcodeproj -scheme MarinadeMaster -sdk iphonesimulator -configuration Debug CODE_SIGNING_ALLOWED=NO build
+        run: xcodebuild -project ios/MarinadeMaster.xcodeproj -scheme MarinadeMaster -sdk iphonesimulator -configuration Debug -derivedDataPath build/DerivedData CODE_SIGNING_ALLOWED=NO build
+      - name: Package Simulator App
+        run: |
+          cd build/DerivedData/Build/Products/Debug-iphonesimulator
+          /usr/bin/zip -r "$GITHUB_WORKSPACE/MarinadeMaster-iOS-Simulator.zip" MarinadeMaster.app
+      - name: Upload Simulator build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MarinadeMaster-iOS-Simulator
+          path: MarinadeMaster-iOS-Simulator.zip
+          retention-days: 14
