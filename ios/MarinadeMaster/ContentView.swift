@@ -168,6 +168,9 @@ struct CreateBatchView: View {
     @Environment(\.dismiss) private var dismiss
     let recipe: RecipeRecord
     @State private var chickenKg = "18"
+    @Query private var inventoryItems: [InventoryItem]
+    @State private var showShortage = false
+    @State private var shortageMessage = ""
 
     var body: some View {
         NavigationStack {
@@ -190,6 +193,9 @@ struct CreateBatchView: View {
                 }
             }
             .navigationTitle("建立批次")
+            .alert("庫存不足，無法扣料", isPresented: $showShortage) {
+                Button("知道了", role: .cancel) {}
+            } message: { Text(shortageMessage) }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
@@ -207,10 +213,63 @@ struct CreateBatchView: View {
 
     private func create() {
         guard let kg = Double(chickenKg), kg > 0 else { return }
-        let snapshot = BatchSnapshot(recipeName: recipe.name, recipeVersion: recipe.version, chickenKg: kg, ingredients: scaledIngredients(kg))
+        let ingredients = scaledIngredients(kg)
+        var deductions: [UUID: Double] = [:]
+        var shortages: [String] = []
+        var costLines: [BatchCostSnapshotLine] = []
+
+        for ingredient in ingredients {
+            guard let item = inventoryItems.first(where: {
+                $0.name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() ==
+                ingredient.name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            }), let amount = convertedAmount(ingredient, to: item.unit) else { continue }
+            deductions[item.id, default: 0] += amount
+        }
+
+        for item in inventoryItems {
+            guard let amount = deductions[item.id], amount > 0 else { continue }
+            if item.onHand + 0.0000001 < amount {
+                shortages.append("\(item.name)：需要 \(amount.formatted()) \(item.unit)，庫存 \(item.onHand.formatted()) \(item.unit)")
+            } else {
+                costLines.append(BatchCostSnapshotLine(
+                    ingredientName: item.name,
+                    quantity: amount,
+                    unit: item.unit,
+                    unitCost: item.averageCost,
+                    totalCost: amount * item.averageCost
+                ))
+            }
+        }
+
+        if !shortages.isEmpty {
+            shortageMessage = shortages.joined(separator: "\\n")
+            showShortage = true
+            return
+        }
+
+        let snapshot = BatchSnapshot(recipeName: recipe.name, recipeVersion: recipe.version, chickenKg: kg, ingredients: ingredients)
         let code = "MM-" + Date.now.formatted(.dateTime.year().month().day().hour().minute())
-        context.insert(BatchRecord(code: code, snapshot: snapshot))
-        dismiss()
+        let batch = BatchRecord(code: code, snapshot: snapshot)
+        batch.costSnapshot = costLines
+        for item in inventoryItems {
+            guard let amount = deductions[item.id], amount > 0 else { continue }
+            item.onHand -= amount
+            item.updatedAt = .now
+        }
+        context.insert(batch)
+        do {
+            try context.save()
+            dismiss()
+        } catch {
+            context.rollback()
+        }
+    }
+
+    private func convertedAmount(_ ingredient: RecipeIngredient, to inventoryUnit: String) -> Double? {
+        if ingredient.unit == inventoryUnit { return ingredient.amount }
+        if ingredient.unit == "g" && inventoryUnit == "kg" { return ingredient.amount / 1000 }
+        if ingredient.unit == "kg" && inventoryUnit == "g" { return ingredient.amount * 1000 }
+        return nil
     }
 }
 
@@ -251,6 +310,22 @@ struct BatchDetailView: View {
                 LabeledContent("配方", value: batch.recipeName)
                 LabeledContent("版本", value: batch.recipeVersion)
                 LabeledContent("雞肉重量", value: "\(batch.chickenKg.formatted()) kg")
+            }
+            if !batch.costSnapshot.isEmpty {
+                Section("批次原料成本快照") {
+                    ForEach(Array(batch.costSnapshot.enumerated()), id: \.offset) { _, line in
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text(line.ingredientName)
+                                Text("\(line.quantity.formatted()) \(line.unit) × \(line.unitCost.formatted(.currency(code: "TWD")))")
+                                    .font(.caption).foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Text(line.totalCost.formatted(.currency(code: "TWD")))
+                        }
+                    }
+                    LabeledContent("已追蹤原料成本", value: batch.costSnapshot.reduce(0) { $0 + $1.totalCost }.formatted(.currency(code: "TWD")))
+                }
             }
             if let snapshot = batch.snapshot {
                 ForEach(Dictionary(grouping: snapshot.ingredients, by: \.group).keys.sorted(), id: \.self) { group in
