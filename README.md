@@ -21,7 +21,7 @@
 - 批次報表列印／另存 PDF、JSON 備份與匯入。
 
 ## 重要限制
-- 資料目前儲存在單一瀏覽器的 localStorage，不是雲端資料庫；不同裝置不會自動同步。
+- 資料目前儲存在單一瀏覽器的 localStorage，不是雲端資料庫；不同裝置不會自動同步。\n- 已加入 PWA Service Worker 與 GitHub Pages 部署工作流程；正式網址需等待 GitHub Actions 部署成功後才可確認。
 - 照片目前壓縮後以 base64 儲存在瀏覽器 localStorage，會受瀏覽器儲存容量限制；尚未使用雲端物件儲存。
 - 採購進貨、退貨與盤點目前採提示視窗操作；完整採購表單、供應商主檔及多層權限仍待後續優化。
 - 尚未完成多人登入、雲端同步、正式部署、完整原生 iOS App、TestFlight 或 App Store 上架。
