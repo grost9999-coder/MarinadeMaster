@@ -7,7 +7,7 @@ struct MarinadeMasterApp: App {
 
     init() {
         do {
-            container = try ModelContainer(for: RecipeRecord.self, BatchRecord.self, BatchPhoto.self)
+            container = try ModelContainer(for: RecipeRecord.self, BatchRecord.self, BatchPhoto.self, InventoryItem.self, InventoryPurchase.self)
             let context = container.mainContext
             let existing = try context.fetch(FetchDescriptor<RecipeRecord>())
             if existing.isEmpty {
