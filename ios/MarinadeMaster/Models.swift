@@ -78,6 +78,14 @@ final class RecipeRecord {
     }
 }
 
+struct BatchCostSnapshotLine: Codable {
+    var ingredientName: String
+    var quantity: Double
+    var unit: String
+    var unitCost: Double
+    var totalCost: Double
+}
+
 @Model
 final class BatchRecord {
     var id: UUID
@@ -87,6 +95,7 @@ final class BatchRecord {
     var chickenKg: Double
     var snapshotData: Data
     var stageTimesData: Data
+    var costSnapshotData: Data
     var createdAt: Date
     @Relationship(deleteRule: .cascade, inverse: \BatchPhoto.batch) var photos: [BatchPhoto]
 
@@ -98,12 +107,18 @@ final class BatchRecord {
         self.chickenKg = snapshot.chickenKg
         self.snapshotData = (try? JSONEncoder().encode(snapshot)) ?? Data()
         self.stageTimesData = Data()
+        self.costSnapshotData = Data()
         self.createdAt = .now
         self.photos = []
     }
 
     var snapshot: BatchSnapshot? {
         try? JSONDecoder().decode(BatchSnapshot.self, from: snapshotData)
+    }
+
+    var costSnapshot: [BatchCostSnapshotLine] {
+        get { (try? JSONDecoder().decode([BatchCostSnapshotLine].self, from: costSnapshotData)) ?? [] }
+        set { costSnapshotData = (try? JSONEncoder().encode(newValue)) ?? Data() }
     }
 
     var stageTimes: [String: Date] {
