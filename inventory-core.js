@@ -8,7 +8,7 @@
     return null;
   }
   function weightedAverage(oldQty,oldPrice,inQty,inPrice){
-    if([oldQty,oldPrice,inQty,inPrice].some(x=>!Number.isFinite(+x))||oldQty<0||inQty<=0||oldPrice<0||inPrice<0)throw new Error("Invalid stock or purchase values");
+    if([oldQty,oldPrice,inQty,inPrice].some(x=>!Number.isFinite(+x))||oldQty<0||inQty<=0||oldPrice<0||inPrice<=0)throw new Error("Invalid stock or purchase values");
     const total=oldQty+inQty;
     if(total<=0)throw new Error("Total stock must be positive");
     return (oldQty*oldPrice+inQty*inPrice)/total;
@@ -17,7 +17,7 @@
     const snap={};
     for(const group of groups||[])for(const item of group.items||[]){
       const name=item[0],s=(stock||[]).find(x=>x.name===name);
-      if(s&&Number.isFinite(+s.price)&&s.price>=0)snap[name]={unit:s.unit,price:+s.price};else snap[name]={missing:true};
+      if(s&&Number.isFinite(+s.price)&&s.price>0)snap[name]={unit:s.unit,price:+s.price};else snap[name]={missing:true};
     }
     return snap;
   }
@@ -28,7 +28,7 @@
       const current=(stock||[]).find(x=>x.name===name);
       const hasSnapshot=!!(snapshot&&Object.prototype.hasOwnProperty.call(snapshot,name));
       const chosen=hasSnapshot?snapshot[name]:current;
-      if(!chosen||chosen.missing||!Number.isFinite(+chosen.price)||+chosen.price<0||!["g","kg"].includes(chosen.unit)){missing.push(name);continue;}
+      if(!chosen||chosen.missing||!Number.isFinite(+chosen.price)||+chosen.price<=0||!["g","kg"].includes(chosen.unit)){missing.push(name);continue;}
       const amount=toUnit(+qty,unit,chosen.unit);
       if(amount===null){missing.push(name);continue;}
       total+=amount*(+chosen.price);
@@ -36,7 +36,7 @@
     return {total,missing:[...new Set(missing)],complete:missing.length===0};
   }
   function applyPurchase(stock,purchase){
-    if(!purchase||!purchase.name||!["g","kg"].includes(purchase.unit)||!(purchase.qty>0)||!(purchase.unitPrice>=0))throw new Error("Invalid purchase");
+    if(!purchase||!purchase.name||!["g","kg"].includes(purchase.unit)||!(purchase.qty>0)||!(purchase.unitPrice>0))throw new Error("Invalid purchase");
     let item=stock.find(x=>x.name===purchase.name);
     if(!item){item={name:purchase.name,unit:purchase.unit,qty:0,price:0};stock.push(item);}
     if(item.unit!==purchase.unit)throw new Error("Purchase unit must match the ingredient stock unit");
@@ -68,12 +68,12 @@
     if(!Number.isFinite(qty)||qty<=0||qty>remaining+1e-9)throw new Error("Return quantity exceeds the unreturned purchase quantity");
     const item=stock.find(x=>x.name===purchase.name);
     if(!item||item.unit!==purchase.unit||item.qty+1e-9<qty)throw new Error("Insufficient stock for this purchase return");
-    const oldQty=+item.qty,oldValue=oldQty*(+item.price||0),returnValue=qty*(+purchase.unitPrice);
+    const oldQty=+item.qty,inventoryValue=qty*(+item.price||0);
     const nextQty=Math.max(0,oldQty-qty);
     item.qty=nextQty;
-    item.price=nextQty>1e-9?Math.max(0,(oldValue-returnValue)/nextQty):0;
+    if(nextQty<=1e-9)item.price=0;
     purchase.returnedQty=(+purchase.returnedQty||0)+qty;
-    return {item,returnedQty:qty,remainingQty:Math.max(0,+purchase.qty-purchase.returnedQty)};
+    return {item,returnedQty:qty,remainingQty:Math.max(0,+purchase.qty-purchase.returnedQty),inventoryValue};
   }
   function adjustStock(stock,name,countedQty){
     const item=stock.find(x=>x.name===name);
