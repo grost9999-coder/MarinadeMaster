@@ -16,7 +16,7 @@ struct InventoryView: View {
                     if items.isEmpty {
                         ContentUnavailableView("尚無庫存原料", systemImage: "shippingbox", description: Text("先新增原料，再登記進貨。"))
                     }
-                    ForEach(items, id: \\.id) { item in
+                    ForEach(items, id: \.id) { item in
                         HStack {
                             Button { selectedItem = item } label: {
                                 VStack(alignment: .leading, spacing: 4) {
