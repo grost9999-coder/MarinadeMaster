@@ -23,7 +23,11 @@ jobs:
         uses: actions/configure-pages@v5
         with:
           enablement: true
-      - name: Test application\n        run: |\n          node --test tests/*.test.js\n          node scripts/check-inline.js\n      - name: Upload site
+      - name: Test application
+        run: |
+          node --test tests/*.test.js
+          node scripts/check-inline.js
+      - name: Upload site
         uses: actions/upload-pages-artifact@v3
         with:
           path: .
