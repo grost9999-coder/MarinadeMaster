@@ -7,3 +7,6 @@ test("purchase creates stock and weighted average",()=>{const stock=[{name:"雞�
 test("batch cost uses captured historical prices",()=>{const groups=[{items:[["鹽",500,"g"]]}],stock=[{name:"鹽",unit:"kg",qty:4,price:120}],snap={鹽:{unit:"kg",price:80}};assert.equal(core.calculateCost(groups,stock,snap).total,40);});
 test("insufficient stock cannot be consumed",()=>{const stock=[{name:"粉",unit:"kg",qty:0.2,price:30}];assert.throws(()=>core.consumeStock(stock,"粉",300,"g"),/Insufficient/);assert.equal(stock[0].qty,0.2);});
 test("missing prices are flagged, never guessed",()=>{const result=core.calculateCost([{items:[["未知料",10,"g"]]}],[],{});assert.equal(result.complete,false);assert.deepEqual(result.missing,["未知料"]);});
+
+test("missing cost stays missing even if a later price appears",()=>{const groups=[{items:[["未知料",10,"g"]]}];const snap=core.captureCosts(groups,[]);const later=[{name:"未知料",unit:"kg",qty:1,price:50}];const result=core.calculateCost(groups,later,snap);assert.equal(result.complete,false);assert.deepEqual(result.missing,["未知料"]);});
+test("zero-price purchase is accepted as an explicit zero cost",()=>{const stock=[];core.applyPurchase(stock,{name:"贈品",unit:"kg",qty:1,unitPrice:0});assert.equal(stock[0].qty,1);assert.equal(core.calculateCost([{items:[["贈品",1000,"g"]]}],stock).total,0);});
