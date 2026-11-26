@@ -12,7 +12,7 @@ struct MarinadeMasterApp: App {
             let existing = try context.fetch(FetchDescriptor<RecipeRecord>())
             if existing.isEmpty {
                 let seeds = RecipeRecord.seedRecipes
-                seeds.forEach(context.insert)
+                for seed in seeds { context.insert(seed) }
                 try context.save()
             }
         } catch {
