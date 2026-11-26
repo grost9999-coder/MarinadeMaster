@@ -1,0 +1,10 @@
+const fs=require("node:fs");
+const vm=require("node:vm");
+const html=fs.readFileSync("index.html","utf8");
+const start=html.indexOf("<script>");
+const end=html.lastIndexOf("</script>");
+if(start<0||end<=start)throw new Error("Main inline script block not found");
+new vm.Script(html.slice(start+8,end),{filename:"index.inline.js"});
+new vm.Script(fs.readFileSync("inventory-core.js","utf8"),{filename:"inventory-core.js"});
+new vm.Script(fs.readFileSync("sw.js","utf8"),{filename:"sw.js"});
+console.log("Inline app, inventory core and service worker syntax: PASS");
