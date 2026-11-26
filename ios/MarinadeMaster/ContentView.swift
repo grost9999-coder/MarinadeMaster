@@ -300,6 +300,8 @@ struct BatchDetailView: View {
     @Environment(\.modelContext) private var context
     let batch: BatchRecord
     @State private var selectedPhoto: PhotosPickerItem?
+    @State private var cameraImage: UIImage?
+    @State private var showCamera = false
     @State private var caption = "生產照片"
 
     private let stages = ["退冰", "醃製", "裹粉", "完成"]
@@ -365,6 +367,11 @@ struct BatchDetailView: View {
                 PhotosPicker(selection: $selectedPhoto, matching: .images) {
                     Label("從相簿選取照片", systemImage: "photo")
                 }
+                Button {
+                    showCamera = true
+                } label: {
+                    Label("使用相機拍照", systemImage: "camera")
+                }
                 ForEach(batch.photos) { photo in
                     HStack {
                         if let image = UIImage(data: photo.imageData) {
@@ -382,24 +389,67 @@ struct BatchDetailView: View {
             }
         }
         .navigationTitle(batch.code)
+        .sheet(isPresented: $showCamera) {
+            CameraPicker(image: $cameraImage)
+        }
+        .onChange(of: cameraImage) { _, image in
+            guard let image else { return }
+            savePhoto(image)
+            cameraImage = nil
+        }
         .onChange(of: selectedPhoto) { _, item in
             guard let item else { return }
             Task {
                 guard let data = try? await item.loadTransferable(type: Data.self),
                       let image = UIImage(data: data) else { return }
-                let maxDimension: CGFloat = 1600
-                let scale = min(1, maxDimension / max(image.size.width, image.size.height))
-                let targetSize = CGSize(width: image.size.width * scale, height: image.size.height * scale)
-                let renderer = UIGraphicsImageRenderer(size: targetSize)
-                let compressed = renderer.jpegData(withCompressionQuality: 0.72) { _ in
-                    image.draw(in: CGRect(origin: .zero, size: targetSize))
-                }
-                let photo = BatchPhoto(imageData: compressed, caption: caption)
-                photo.batch = batch
-                batch.photos.append(photo)
-                try? context.save()
+                savePhoto(image)
                 selectedPhoto = nil
             }
+        }
+    }
+
+    private func savePhoto(_ image: UIImage) {
+        let maxDimension: CGFloat = 1600
+        let scale = min(1, maxDimension / max(image.size.width, image.size.height))
+        let targetSize = CGSize(width: image.size.width * scale, height: image.size.height * scale)
+        let renderer = UIGraphicsImageRenderer(size: targetSize)
+        let compressed = renderer.jpegData(withCompressionQuality: 0.72) { _ in
+            image.draw(in: CGRect(origin: .zero, size: targetSize))
+        }
+        let photo = BatchPhoto(imageData: compressed, caption: caption)
+        photo.batch = batch
+        batch.photos.append(photo)
+        try? context.save()
+    }
+}
+
+struct CameraPicker: UIViewControllerRepresentable {
+    @Environment(\\.dismiss) private var dismiss
+    @Binding var image: UIImage?
+
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.sourceType = .camera
+        picker.cameraCaptureMode = .photo
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ controller: UIImagePickerController, context: Context) {}
+
+    final class Coordinator: NSObject, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
+        let parent: CameraPicker
+        init(_ parent: CameraPicker) { self.parent = parent }
+
+        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
+            parent.image = info[.originalImage] as? UIImage
+            parent.dismiss.wrappedValue.dismiss()
+        }
+
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            parent.dismiss.wrappedValue.dismiss()
         }
     }
 }
