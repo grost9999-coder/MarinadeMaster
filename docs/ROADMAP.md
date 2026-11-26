@@ -23,6 +23,7 @@
 - [x] PWA Service Worker 離線快取與 GitHub Pages 自動部署工作流程（部署執行待確認）
 
 ## Phase 3 — 雲端
+- [x] 初版 Supabase schema、RLS 權限、私有照片 bucket 與 revision snapshot RPC 設計
 - [ ] 帳號登入與角色權限
 - [ ] 雲端資料庫與照片物件儲存
 - [ ] iPhone／網頁多裝置同步
