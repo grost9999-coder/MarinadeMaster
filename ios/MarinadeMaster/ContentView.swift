@@ -17,7 +17,7 @@ struct ContentView: View {
 
 struct RecipeListView: View {
     @Environment(\.modelContext) private var context
-    @Query(sort: \\RecipeRecord.createdAt, order: .reverse) private var recipes: [RecipeRecord]
+    @Query(sort: \RecipeRecord.createdAt, order: .reverse) private var recipes: [RecipeRecord]
     @State private var showEditor = false
 
     var body: some View {
@@ -63,7 +63,7 @@ struct RecipeDetailView: View {
                 LabeledContent("基準雞肉", value: "\(recipe.baseKg.formatted()) kg")
                 if !recipe.note.isEmpty { Text(recipe.note).font(.footnote).foregroundStyle(.secondary) }
             }
-            ForEach(Dictionary(grouping: ingredients, by: \\.group).keys.sorted(), id: \\.self) { group in
+            ForEach(Dictionary(grouping: ingredients, by: \.group).keys.sorted(), id: \.self) { group in
                 Section(group) {
                     ForEach(ingredients.filter { $0.group == group }) { item in
                         HStack {
@@ -175,7 +175,7 @@ struct CreateBatchView: View {
                 }
                 if let kg = Double(chickenKg), kg > 0 {
                     Section("換算預覽") {
-                        ForEach(scaledIngredients(kg), id: \\.id) { item in
+                        ForEach(scaledIngredients(kg), id: \.id) { item in
                             HStack {
                                 Text(item.group + "／" + item.name)
                                 Spacer()
@@ -211,7 +211,7 @@ struct CreateBatchView: View {
 }
 
 struct BatchListView: View {
-    @Query(sort: \\BatchRecord.createdAt, order: .reverse) private var batches: [BatchRecord]
+    @Query(sort: \BatchRecord.createdAt, order: .reverse) private var batches: [BatchRecord]
 
     var body: some View {
         NavigationStack {
@@ -249,7 +249,7 @@ struct BatchDetailView: View {
                 LabeledContent("雞肉重量", value: "\(batch.chickenKg.formatted()) kg")
             }
             if let snapshot = batch.snapshot {
-                ForEach(Dictionary(grouping: snapshot.ingredients, by: \\.group).keys.sorted(), id: \\.self) { group in
+                ForEach(Dictionary(grouping: snapshot.ingredients, by: \.group).keys.sorted(), id: \.self) { group in
                     Section(group) {
                         ForEach(snapshot.ingredients.filter { $0.group == group }) { item in
                             HStack {
@@ -262,7 +262,7 @@ struct BatchDetailView: View {
                 }
             }
             Section("製程時間") {
-                ForEach(stages, id: \\.self) { stage in
+                ForEach(stages, id: \.self) { stage in
                     HStack {
                         VStack(alignment: .leading) {
                             Text(stage)
