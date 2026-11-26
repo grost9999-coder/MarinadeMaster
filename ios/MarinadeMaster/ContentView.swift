@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 import PhotosUI
 import UIKit
+import AVFoundation
 
 struct ContentView: View {
     var body: some View {
@@ -303,6 +304,10 @@ struct BatchDetailView: View {
     @State private var cameraImage: UIImage?
     @State private var showCamera = false
     @State private var showCameraUnavailable = false
+    @State private var cameraNeedsSettings = false
+    @State private var cameraMessage = ""
+    @State private var photoMessage = ""
+    @State private var showPhotoMessage = false
     @State private var caption = "生產照片"
 
     private let stages = ["退冰", "醃製", "裹粉", "完成"]
@@ -369,7 +374,7 @@ struct BatchDetailView: View {
                     Label("從相簿選取照片", systemImage: "photo")
                 }
                 Button {
-                    showCamera = true
+                    requestCameraAccess()
                 } label: {
                     Label("使用相機拍照", systemImage: "camera")
                 }
@@ -396,7 +401,21 @@ struct BatchDetailView: View {
         .alert("此裝置沒有可用相機", isPresented: $showCameraUnavailable) {
             Button("確定", role: .cancel) {}
         } message: {
-            Text("可改用「從相簿選取照片」加入批次紀錄。")
+            Text(cameraMessage.isEmpty ? "可改用「從相簿選取照片」加入批次紀錄。" : cameraMessage)
+        }
+        .alert("相機權限未開啟", isPresented: $cameraNeedsSettings) {
+            Button("前往設定") {
+                guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+                UIApplication.shared.open(url)
+            }
+            Button("改用相簿", role: .cancel) {}
+        } message: {
+            Text(cameraMessage)
+        }
+        .alert("照片紀錄", isPresented: $showPhotoMessage) {
+            Button("確定", role: .cancel) {}
+        } message: {
+            Text(photoMessage)
         }
         .onChange(of: cameraImage) { _, image in
             guard let image else { return }
@@ -406,11 +425,47 @@ struct BatchDetailView: View {
         .onChange(of: selectedPhoto) { _, item in
             guard let item else { return }
             Task {
-                guard let data = try? await item.loadTransferable(type: Data.self),
-                      let image = UIImage(data: data) else { return }
-                savePhoto(image)
+                do {
+                    guard let data = try await item.loadTransferable(type: Data.self),
+                          let image = UIImage(data: data) else {
+                        throw CocoaError(.fileReadCorruptFile)
+                    }
+                    savePhoto(image)
+                } catch {
+                    photoMessage = "讀取相簿照片失敗：\(error.localizedDescription)"
+                    showPhotoMessage = true
+                }
                 selectedPhoto = nil
             }
+        }
+    }
+
+    private func requestCameraAccess() {
+        guard UIImagePickerController.isSourceTypeAvailable(.camera) else {
+            cameraMessage = "此裝置沒有可用相機，可改用「從相簿選取照片」。"
+            showCameraUnavailable = true
+            return
+        }
+        switch AVCaptureDevice.authorizationStatus(for: .video) {
+        case .authorized:
+            showCamera = true
+        case .notDetermined:
+            AVCaptureDevice.requestAccess(for: .video) { granted in
+                DispatchQueue.main.async {
+                    if granted {
+                        showCamera = true
+                    } else {
+                        cameraMessage = "請在 iPhone「設定 > MarinadeMaster > 相機」允許相機權限，或改用相簿選取。"
+                        cameraNeedsSettings = true
+                    }
+                }
+            }
+        case .denied, .restricted:
+            cameraMessage = "相機權限目前未允許。可前往設定開啟權限，或改用相簿選取照片。"
+            cameraNeedsSettings = true
+        @unknown default:
+            cameraMessage = "無法確認相機權限，可改用相簿選取照片。"
+            showCameraUnavailable = true
         }
     }
 
@@ -422,10 +477,23 @@ struct BatchDetailView: View {
         let compressed = renderer.jpegData(withCompressionQuality: 0.72) { _ in
             image.draw(in: CGRect(origin: .zero, size: targetSize))
         }
+        guard !compressed.isEmpty else {
+            photoMessage = "照片壓縮失敗，原有批次資料未變更。請重試或改選其他照片。"
+            showPhotoMessage = true
+            return
+        }
         let photo = BatchPhoto(imageData: compressed, caption: caption)
         photo.batch = batch
         batch.photos.append(photo)
-        try? context.save()
+        do {
+            try context.save()
+            photoMessage = "照片已加入 \(batch.code) 批次。"
+        } catch {
+            context.delete(photo)
+            batch.photos.removeAll { $0.id == photo.id }
+            photoMessage = "照片未能儲存：\(error.localizedDescription)"
+        }
+        showPhotoMessage = true
     }
 }
 

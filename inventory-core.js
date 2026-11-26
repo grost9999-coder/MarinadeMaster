@@ -36,7 +36,7 @@
     return {total,missing:[...new Set(missing)],complete:missing.length===0};
   }
   function applyPurchase(stock,purchase){
-    if(!purchase||!purchase.name||!["g","kg"].includes(purchase.unit)||!(purchase.qty>0)||!(purchase.unitPrice>0))throw new Error("Invalid purchase");
+    if(!purchase||typeof purchase.name!=="string"||!purchase.name.trim()||!["g","kg"].includes(purchase.unit)||!Number.isFinite(+purchase.qty)||+purchase.qty<=0||!Number.isFinite(+purchase.unitPrice)||+purchase.unitPrice<=0)throw new Error("Invalid purchase");
     let item=stock.find(x=>x.name===purchase.name);
     if(!item){item={name:purchase.name,unit:purchase.unit,qty:0,price:0};stock.push(item);}
     if(item.unit!==purchase.unit)throw new Error("Purchase unit must match the ingredient stock unit");

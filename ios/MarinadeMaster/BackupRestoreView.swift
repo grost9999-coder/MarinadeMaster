@@ -2,6 +2,7 @@ import Foundation
 import SwiftUI
 import SwiftData
 import UniformTypeIdentifiers
+import UIKit
 
 struct BackupArchive: Codable {
     var format: String
@@ -225,13 +226,19 @@ struct BackupRestoreView: View {
             guard let url = try result.get().first else { return }
             let scoped = url.startAccessingSecurityScopedResource()
             defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+            let fileSize = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
+            guard fileSize > 0, fileSize <= 250 * 1024 * 1024 else {
+                throw CocoaError(.fileReadTooLarge)
+            }
             let data = try Data(contentsOf: url)
             let decoder = JSONDecoder()
             decoder.dateDecodingStrategy = .iso8601
             let archive = try decoder.decode(BackupArchive.self, from: data)
             guard archive.format == "MarinadeMaster", archive.version == 1,
-                  archive.recipes.allSatisfy({ $0.baseKg > 0 && !$0.name.isEmpty }),
-                  archive.batches.allSatisfy({ $0.chickenKg > 0 }) else {
+                  archive.recipes.allSatisfy(isValidRecipe),
+                  archive.batches.allSatisfy(isValidBatch),
+                  (archive.inventoryItems ?? []).allSatisfy(isValidInventoryItem),
+                  (archive.purchases ?? []).allSatisfy(isValidPurchase) else {
                 throw CocoaError(.fileReadCorruptFile)
             }
             pendingArchive = archive
@@ -240,6 +247,49 @@ struct BackupRestoreView: View {
             statusMessage = "無法讀取備份：\(error.localizedDescription)"
             showStatus = true
         }
+    }
+
+    private func isValidRecipe(_ recipe: RecipeBackup) -> Bool {
+        recipe.baseKg.isFinite && recipe.baseKg > 0 &&
+        !recipe.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+        !recipe.version.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+        recipe.ingredients.allSatisfy {
+            !$0.group.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+            !$0.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+            $0.amount.isFinite && $0.amount > 0 && ["g", "kg"].contains($0.unit)
+        }
+    }
+
+    private func isValidBatch(_ batch: BatchBackup) -> Bool {
+        guard !batch.code.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              !batch.recipeName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              batch.chickenKg.isFinite, batch.chickenKg > 0,
+              batch.photos.allSatisfy({ !$0.imageData.isEmpty && $0.imageData.count <= 15 * 1024 * 1024 && UIImage(data: $0.imageData) != nil }),
+              (batch.costSnapshot ?? []).allSatisfy({ $0.quantity.isFinite && $0.quantity >= 0 && $0.unitCost.isFinite && $0.unitCost >= 0 && $0.totalCost.isFinite && $0.totalCost >= 0 && ["g", "kg", "個"].contains($0.unit) }) else {
+            return false
+        }
+        if let snapshot = batch.snapshot {
+            guard snapshot.chickenKg.isFinite, snapshot.chickenKg > 0,
+                  !snapshot.recipeName.isEmpty, !snapshot.recipeVersion.isEmpty,
+                  snapshot.ingredients.allSatisfy({
+                      !$0.group.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+                      !$0.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+                      $0.amount.isFinite && $0.amount > 0 && ["g", "kg"].contains($0.unit)
+                  }) else { return false }
+        }
+        return true
+    }
+
+    private func isValidInventoryItem(_ item: InventoryItemBackup) -> Bool {
+        !item.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+        ["g", "kg", "個"].contains(item.unit) && item.onHand.isFinite && item.onHand >= 0 &&
+        item.averageCost.isFinite && item.averageCost >= 0
+    }
+
+    private func isValidPurchase(_ purchase: InventoryPurchaseBackup) -> Bool {
+        !purchase.itemName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+        ["g", "kg", "個"].contains(purchase.unit) && purchase.quantity.isFinite && purchase.quantity > 0 &&
+        purchase.unitPrice.isFinite && purchase.unitPrice > 0
     }
 
     private func restoreBackup() {
