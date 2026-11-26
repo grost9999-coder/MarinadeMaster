@@ -44,6 +44,16 @@
     item.qty=(+item.qty||0)+purchase.qty;
     return item;
   }
+  function aggregateRequirements(groups,stock){
+    const totals={};
+    for(const group of groups||[])for(const item of group.items||[]){
+      const name=item[0],row=(stock||[]).find(x=>x.name===name);
+      const amount=row?toUnit(+item[1],item[2],row.unit):null;
+      if(amount===null){totals[name]=null;continue;}
+      if(totals[name]!==null)totals[name]=(totals[name]||0)+amount;
+    }
+    return totals;
+  }
   function consumeStock(stock,name,qty,unit){
     const item=stock.find(x=>x.name===name);
     if(!item)throw new Error("Missing stock: "+name);
@@ -52,6 +62,6 @@
     item.qty=Math.max(0,item.qty-amount);
     return item;
   }
-  root.InventoryCore={toUnit,weightedAverage,captureCosts,calculateCost,applyPurchase,consumeStock};
+  root.InventoryCore={toUnit,weightedAverage,captureCosts,calculateCost,applyPurchase,consumeStock,aggregateRequirements};
   if(typeof module!=="undefined"&&module.exports)module.exports=root.InventoryCore;
 })(typeof globalThis!=="undefined"?globalThis:this);
