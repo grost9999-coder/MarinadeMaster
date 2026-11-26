@@ -9,6 +9,8 @@ struct BackupArchive: Codable {
     var exportedAt: Date
     var recipes: [RecipeBackup]
     var batches: [BatchBackup]
+    var inventoryItems: [InventoryItemBackup]?
+    var purchases: [InventoryPurchaseBackup]?
 }
 
 struct RecipeBackup: Codable {
@@ -63,6 +65,43 @@ struct PhotoBackup: Codable {
     }
 }
 
+
+struct InventoryItemBackup: Codable {
+    var name: String
+    var unit: String
+    var onHand: Double
+    var averageCost: Double
+    var updatedAt: Date
+
+    init(_ item: InventoryItem) {
+        name = item.name
+        unit = item.unit
+        onHand = item.onHand
+        averageCost = item.averageCost
+        updatedAt = item.updatedAt
+    }
+}
+
+struct InventoryPurchaseBackup: Codable {
+    var itemName: String
+    var unit: String
+    var quantity: Double
+    var unitPrice: Double
+    var supplier: String
+    var note: String
+    var createdAt: Date
+
+    init(_ purchase: InventoryPurchase) {
+        itemName = purchase.itemName
+        unit = purchase.unit
+        quantity = purchase.quantity
+        unitPrice = purchase.unitPrice
+        supplier = purchase.supplier
+        note = purchase.note
+        createdAt = purchase.createdAt
+    }
+}
+
 struct BackupFileDocument: FileDocument {
     static var readableContentTypes: [UTType] { [.json] }
     var data: Data
@@ -85,6 +124,8 @@ struct BackupRestoreView: View {
     @Environment(\.modelContext) private var context
     @Query private var recipes: [RecipeRecord]
     @Query private var batches: [BatchRecord]
+    @Query private var inventoryItems: [InventoryItem]
+    @Query private var purchases: [InventoryPurchase]
 
     @State private var exportDocument: BackupFileDocument?
     @State private var showExporter = false
@@ -101,6 +142,8 @@ struct BackupRestoreView: View {
                     LabeledContent("配方版本", value: "\(recipes.count) 筆")
                     LabeledContent("生產批次", value: "\(batches.count) 筆")
                     LabeledContent("批次照片", value: "\(batches.reduce(0) { $0 + $1.photos.count }) 張")
+                    LabeledContent("庫存原料", value: "\(inventoryItems.count) 種")
+                    LabeledContent("進貨紀錄", value: "\(purchases.count) 筆")
                 }
                 Section("完整備份") {
                     Button {
@@ -160,7 +203,9 @@ struct BackupRestoreView: View {
                 version: 1,
                 exportedAt: .now,
                 recipes: recipes.map(RecipeBackup.init),
-                batches: batches.map(BatchBackup.init)
+                batches: batches.map(BatchBackup.init),
+                inventoryItems: inventoryItems.map(InventoryItemBackup.init),
+                purchases: purchases.map(InventoryPurchaseBackup.init)
             )
             let encoder = JSONEncoder()
             encoder.dateEncodingStrategy = .iso8601
@@ -200,6 +245,8 @@ struct BackupRestoreView: View {
         do {
             for item in try context.fetch(FetchDescriptor<BatchRecord>()) { context.delete(item) }
             for item in try context.fetch(FetchDescriptor<RecipeRecord>()) { context.delete(item) }
+            for item in try context.fetch(FetchDescriptor<InventoryPurchase>()) { context.delete(item) }
+            for item in try context.fetch(FetchDescriptor<InventoryItem>()) { context.delete(item) }
 
             for item in archive.recipes {
                 let recipe = RecipeRecord(name: item.name, version: item.version, baseKg: item.baseKg, note: item.note, ingredients: item.ingredients)
@@ -218,9 +265,19 @@ struct BackupRestoreView: View {
                 }
                 context.insert(batch)
             }
+            for item in archive.inventoryItems ?? [] {
+                let restored = InventoryItem(name: item.name, unit: item.unit, onHand: item.onHand, averageCost: item.averageCost)
+                restored.updatedAt = item.updatedAt
+                context.insert(restored)
+            }
+            for item in archive.purchases ?? [] {
+                let restored = InventoryPurchase(itemName: item.itemName, unit: item.unit, quantity: item.quantity, unitPrice: item.unitPrice, supplier: item.supplier, note: item.note)
+                restored.createdAt = item.createdAt
+                context.insert(restored)
+            }
             try context.save()
             pendingArchive = nil
-            statusMessage = "還原完成：\(archive.recipes.count) 個配方版本、\(archive.batches.count) 個批次、\(archive.batches.reduce(0) { $0 + $1.photos.count }) 張照片。"
+            statusMessage = "還原完成：\(archive.recipes.count) 個配方版本、\(archive.batches.count) 個批次、\(archive.batches.reduce(0) { $0 + $1.photos.count }) 張照片、\((archive.inventoryItems ?? []).count) 種庫存原料、\((archive.purchases ?? []).count) 筆進貨紀錄。"
         } catch {
             context.rollback()
             statusMessage = "還原失敗，已嘗試取消未提交的變更：\(error.localizedDescription)"
