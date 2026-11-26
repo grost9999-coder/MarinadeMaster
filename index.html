@@ -13,8 +13,8 @@
 <section id="backup" class="hide"><div class="panel"><h3>生產批次報表</h3><select id="report"></select> <button class="primary" id="pdf">列印／另存 PDF</button></div><div class="panel"><h3>資料備份</h3><button class="primary" id="export">匯出 JSON</button><label>匯入 JSON<input id="import" type="file" accept=".json,application/json"></label></div></section>
 </main><script>
 const original=[
-{id:'R001',name:'紅麴豆乳雞－甜菜根粉版',version:'歷史紀錄／18kg基準',base:18,groups:[{name:'濕料',items:[['紅麴豆腐乳',200,'g'],['醬油',15,'g'],['米酒',105,'g'],['沙拉油',36,'g'],['醋',5,'g']]},{name:'乾料／粉漿',items:[['豆漿粉',60,'g'],['蒜粉',53,'g'],['砂糖',45,'g'],['白胡椒',18,'g'],['甜菜根粉',5,'g'],['磷酸鈉或林寶粉',5,'g'],['中筋麵粉',150,'g'],['地瓜粉',450,'g'],['玉米粉',300,'g'],['冰水',180,'g'],['CMC',1.8,'g']}],note:'最新18kg摘要；「磷酸鈉5g或林寶粉」保留原始歧義。'},
-{id:'R002',name:'檸檬雞－熟黃豆粉版',version:'2026-10-05原始紀錄',base:17,groups:[{name:'醃料（未加水）',items:[['米酒',255,'g'],['醬油',50,'g'],['檸檬酸',51,'g'],['砂糖',204,'g'],['鹽',136,'g'],['熟黃豆粉',60,'g'],['蒜粉',51,'g'],['白胡椒粉',17,'g']}],note:'原始紀錄明確註記：醃料階段沒有加水。每17kg翅腿。'}
+{id:'R001',name:'紅麴豆乳雞－甜菜根粉版',version:'歷史紀錄／18kg基準',base:18,groups:[{name:'濕料',items:[['紅麴豆腐乳',200,'g'],['醬油',15,'g'],['米酒',105,'g'],['沙拉油',36,'g'],['醋',5,'g']]},{name:'乾料／粉漿',items:[['豆漿粉',60,'g'],['蒜粉',53,'g'],['砂糖',45,'g'],['白胡椒',18,'g'],['甜菜根粉',5,'g'],['磷酸鈉或林寶粉',5,'g'],['中筋麵粉',150,'g'],['地瓜粉',450,'g'],['玉米粉',300,'g'],['冰水',180,'g'],['CMC',1.8,'g']]}],note:'最新18kg摘要；「磷酸鈉5g或林寶粉」保留原始歧義。'},
+{id:'R002',name:'檸檬雞－熟黃豆粉版',version:'2026-10-05原始紀錄',base:17,groups:[{name:'醃料（未加水）',items:[['米酒',255,'g'],['醬油',50,'g'],['檸檬酸',51,'g'],['砂糖',204,'g'],['鹽',136,'g'],['熟黃豆粉',60,'g'],['蒜粉',51,'g'],['白胡椒粉',17,'g']]}],note:'原始紀錄明確註記：醃料階段沒有加水。每17kg翅腿。'}
 ];
 let db=JSON.parse(localStorage.getItem('mmdb')||'null')||{recipes:original,batches:[],stock:[],ledger:[]};db.ledger=db.ledger||[];let calc=null;
 const $=id=>document.getElementById(id),save=()=>{try{localStorage.setItem('mmdb',JSON.stringify(db))}catch(e){alert('儲存空間不足。請先匯出 JSON 備份，並減少批次照片數量或改用雲端儲存。');return}render()},fmt=n=>Number(n.toFixed(4)),esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
