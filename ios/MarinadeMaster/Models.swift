@@ -88,7 +88,7 @@ final class BatchRecord {
     var snapshotData: Data
     var stageTimesData: Data
     var createdAt: Date
-    @Relationship(deleteRule: .cascade) var photos: [BatchPhoto]
+    @Relationship(deleteRule: .cascade, inverse: \\BatchPhoto.batch) var photos: [BatchPhoto]
 
     init(code: String, snapshot: BatchSnapshot) {
         self.id = UUID()
