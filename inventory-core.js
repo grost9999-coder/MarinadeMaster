@@ -62,6 +62,37 @@
     item.qty=Math.max(0,item.qty-amount);
     return item;
   }
-  root.InventoryCore={toUnit,weightedAverage,captureCosts,calculateCost,applyPurchase,consumeStock,aggregateRequirements};
+
+  function returnPurchase(stock,purchase,qty){
+    const remaining=+purchase.qty-(+purchase.returnedQty||0);
+    if(!Number.isFinite(qty)||qty<=0||qty>remaining+1e-9)throw new Error("Return quantity exceeds the unreturned purchase quantity");
+    const item=stock.find(x=>x.name===purchase.name);
+    if(!item||item.unit!==purchase.unit||item.qty+1e-9<qty)throw new Error("Insufficient stock for this purchase return");
+    const oldQty=+item.qty,oldValue=oldQty*(+item.price||0),returnValue=qty*(+purchase.unitPrice);
+    const nextQty=Math.max(0,oldQty-qty);
+    item.qty=nextQty;
+    item.price=nextQty>1e-9?Math.max(0,(oldValue-returnValue)/nextQty):0;
+    purchase.returnedQty=(+purchase.returnedQty||0)+qty;
+    return {item,returnedQty:qty,remainingQty:Math.max(0,+purchase.qty-purchase.returnedQty)};
+  }
+  function adjustStock(stock,name,countedQty){
+    const item=stock.find(x=>x.name===name);
+    if(!item)throw new Error("Missing stock: "+name);
+    if(!Number.isFinite(countedQty)||countedQty<0)throw new Error("Counted stock must be a non-negative number");
+    const before=+item.qty||0,delta=countedQty-before;
+    item.qty=countedQty;
+    return {item,before,after:countedQty,delta};
+  }
+  function validateBackup(input){
+    let data;
+    try{data=JSON.parse(JSON.stringify(input));}catch(e){throw new Error("Backup is not valid JSON data");}
+    if(!data||!Array.isArray(data.recipes)||!Array.isArray(data.batches)||!Array.isArray(data.stock))throw new Error("Backup must contain recipes, batches and stock arrays");
+    data.ledger=Array.isArray(data.ledger)?data.ledger:[];
+    data.purchases=Array.isArray(data.purchases)?data.purchases:[];
+    for(const s of data.stock){if(!s||typeof s.name!=="string"||!s.name.trim()||!["g","kg"].includes(s.unit)||!Number.isFinite(+s.qty)||+s.qty<0||!Number.isFinite(+s.price)||+s.price<0)throw new Error("Backup contains invalid stock records");}
+    for(const p of data.purchases){if(!p||typeof p.name!=="string"||!["g","kg"].includes(p.unit)||!Number.isFinite(+p.qty)||+p.qty<=0||!Number.isFinite(+p.unitPrice)||+p.unitPrice<0)throw new Error("Backup contains invalid purchase records");p.returnedQty=Number.isFinite(+p.returnedQty)?+p.returnedQty:0;}
+    return data;
+  }
+  root.InventoryCore={toUnit,weightedAverage,captureCosts,calculateCost,applyPurchase,consumeStock,aggregateRequirements,returnPurchase,adjustStock,validateBackup};
   if(typeof module!=="undefined"&&module.exports)module.exports=root.InventoryCore;
 })(typeof globalThis!=="undefined"?globalThis:this);
