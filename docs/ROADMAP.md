@@ -29,9 +29,11 @@
 - [ ] 僅在使用者日後明確要求時再恢復此階段
 
 ## Phase 4 — iOS（本機優先）
-- [ ] SwiftUI iPhone App，使用本機 SwiftData／檔案儲存
-- [ ] 相機／相簿照片紀錄與本機備份匯出
-- [ ] 離線操作與資料匯入／還原
+- [x] 建立 SwiftUI／SwiftData 原生 App 專案骨架與本機資料模型
+- [x] 原生配方清單、配方編輯另存版本、雞肉重量換算與批次快照
+- [x] 原生批次製程時間紀錄與相簿照片本機保存／刪除
+- [ ] 原生相機拍攝、JSON／照片備份匯出與資料還原
+- [ ] Xcode／GitHub macOS CI 編譯成功確認與 iPhone 實機測試
 - [ ] TestFlight 測試、簽署與 App Store 審核
 
 ## 驗收原則
