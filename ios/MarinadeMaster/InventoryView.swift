@@ -27,7 +27,6 @@ struct InventoryView: View {
                                         Text(" " + item.unit)
                                     }
                                     .foregroundColor(item.onHand > 0 ? Color.primary : Color.orange)
-                                    }
                                     HStack(spacing: 3) {
                                         Text("平均單位成本：")
                                         Text(item.averageCost, format: .currency(code: "TWD"))
