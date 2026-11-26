@@ -430,7 +430,7 @@ struct BatchDetailView: View {
 }
 
 struct CameraPicker: UIViewControllerRepresentable {
-    @Environment(\\.dismiss) private var dismiss
+    @Environment(\.dismiss) private var dismiss
     @Binding var image: UIImage?
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
