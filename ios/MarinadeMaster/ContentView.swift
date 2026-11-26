@@ -10,6 +10,8 @@ struct ContentView: View {
                 .tabItem { Label("配方", systemImage: "book.closed") }
             BatchListView()
                 .tabItem { Label("生產批次", systemImage: "clipboard") }
+            BackupRestoreView()
+                .tabItem { Label("備份", systemImage: "externaldrive") }
         }
         .tint(Color(red: 0.09, green: 0.42, blue: 0.29))
     }
