@@ -25,6 +25,7 @@
 
 ## 尚未完成／尚未驗證
 - 本工作環境沒有 Xcode，因此尚未宣稱 iOS 專案已成功編譯或在 iPhone 實機運行。
-- 已新增 macOS GitHub Actions 編譯工作流程；需查看 Actions 執行結果確認是否通過。
+- macOS GitHub Actions 已成功通過 iOS Simulator 編譯；目前工作流程會將 `.app` 打包為 ZIP artifact（保留 14 天），可供模擬器測試，不可直接安裝到實體 iPhone。
+- GitHub Actions 支援手動執行；每次 iOS 目錄變更也會自動編譯。
 - 原生相機即時拍攝、完整資料／照片備份匯出還原、庫存採購成本模組仍待開發。
 - 尚未簽署、上傳 TestFlight 或送 App Store 審核。
