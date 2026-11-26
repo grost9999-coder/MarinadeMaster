@@ -17,7 +17,7 @@ const original=[
 {id:'R002',name:'檸檬雞－熟黃豆粉版',version:'2026-10-05原始紀錄',base:17,groups:[{name:'醃料（未加水）',items:[['米酒',255,'g'],['醬油',50,'g'],['檸檬酸',51,'g'],['砂糖',204,'g'],['鹽',136,'g'],['熟黃豆粉',60,'g'],['蒜粉',51,'g'],['白胡椒粉',17,'g']]}],note:'原始紀錄明確註記：醃料階段沒有加水。每17kg翅腿。'}
 ];
 let db=JSON.parse(localStorage.getItem('mmdb')||'null')||{recipes:original,batches:[],stock:[],ledger:[],purchases:[]};db.ledger=db.ledger||[];db.purchases=db.purchases||[];db.stock.forEach(x=>{if(!Number.isFinite(+x.qty))x.qty=0;if(!Number.isFinite(+x.price))x.price=0});let calc=null;
-const $=id=>document.getElementById(id),save=()=>{try{localStorage.setItem('mmdb',JSON.stringify(db))}catch(e){alert('儲存空間不足。請先匯出 JSON 備份，並減少批次照片數量或改用雲端儲存。');return}render()},fmt=n=>Number(n.toFixed(4)),esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const $=id=>document.getElementById(id),save=()=>{try{localStorage.setItem('mmdb',JSON.stringify(db))}catch(e){alert('本機儲存空間不足，這次變更尚未寫入。請先匯出 JSON 備份並清理不需要的照片。');return false}render();return true},fmt=n=>Number(n.toFixed(4)),esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 document.querySelector('.tabs').onclick=e=>{let b=e.target.closest('[data-p]');if(!b)return;document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));document.querySelectorAll('main section').forEach(x=>x.classList.toggle('hide',x.id!==b.dataset.p));};
 function itemsOf(r){return r.groups.flatMap(g=>g.items.map(x=>({name:x[0],qty:+x[1],unit:x[2]})))}
 function unitQty(q,from,to){return InventoryCore.toUnit(q,from,to)}
@@ -57,8 +57,8 @@ window.saveRecipeDraft=()=>{
  const groups=recipeDraft.groups.map((g,gi)=>({name:document.querySelector('[data-group-name="'+gi+'"]').value.trim(),items:g.items.map((it,ii)=>{const key=gi+'-'+ii;return [document.querySelector('[data-item-name="'+key+'"]').value.trim(),+document.querySelector('[data-item-qty="'+key+'"]').value,document.querySelector('[data-item-unit="'+key+'"]').value]})}));
  if(!groups.length)return alert('至少需要一個原料群組。');
  for(const g of groups){if(!g.name)return alert('原料群組名稱不可空白。');for(const it of g.items){if(!it[0]||!(it[1]>0)||!['g','kg'].includes(it[2]))return alert('每筆原料都要有名稱、正數用量及 g／kg 單位。')}}
- db.recipes.push({id:'R'+Date.now(),name,version,base,groups,note,createdAt:new Date().toISOString(),basedOn:recipeDraft.basedOnId||recipeDraft.id||null});
- recipeDraft=null;save();$('recipeEditor').classList.add('hide');alert('已另存為新配方版本，原始配方保持不變。');
+ const created={id:'R'+Date.now(),name,version,base,groups,note,createdAt:new Date().toISOString(),basedOn:recipeDraft.basedOnId||recipeDraft.id||null};db.recipes.push(created);
+ if(!save()){db.recipes.pop();return}recipeDraft=null;$('recipeEditor').classList.add('hide');alert('已另存為新配方版本，原始配方保持不變。');
 };
 let selectedPhotoBatch=null;
 window.pickBatchPhoto=id=>{selectedPhotoBatch=id;$('batchPhotoInput').value='';$('batchPhotoInput').click()};
@@ -74,7 +74,7 @@ $('batchPhotoInput').onchange=e=>{
    if(data.length>900000)return alert('照片壓縮後仍過大（上限約 900KB），請改選較小的照片。');
    const b=db.batches.find(x=>x.id===selectedPhotoBatch);if(!b)return;
    const caption=prompt('照片備註（例如：醃製完成、裹粉狀態）','生產照片');if(caption===null)return;
-   b.photos=b.photos||[];b.photos.push({id:'PH'+Date.now()+'-'+Math.random().toString(36).slice(2,7),data,caption,createdAt:new Date().toLocaleString('zh-TW',{hour12:false}),mime:'image/jpeg'});save();if($('photoViewer').classList.contains('open'))renderBatchPhotoViewer(selectedPhotoBatch);
+   b.photos=b.photos||[];b.photos.push({id:'PH'+Date.now()+'-'+Math.random().toString(36).slice(2,7),data,caption,createdAt:new Date().toLocaleString('zh-TW',{hour12:false}),mime:'image/jpeg'});if(!save()){b.photos.pop();return}if($('photoViewer').classList.contains('open'))renderBatchPhotoViewer(selectedPhotoBatch);
   };img.onerror=()=>alert('無法讀取這張照片。');img.src=reader.result;
  };reader.readAsDataURL(file);
 };
@@ -90,7 +90,7 @@ function renderBatchPhotoViewer(id){
  $('photoViewer').classList.add('open');$('photoViewer').dataset.batchId=id;
 }
 window.closePhotoViewer=()=>{$('photoViewer').classList.remove('open')};
-window.deleteBatchPhoto=(id,index)=>{const b=db.batches.find(x=>x.id===id);if(!b||!b.photos||!b.photos[index])return;if(!confirm('確定刪除這張批次照片？'))return;b.photos.splice(index,1);save();renderBatchPhotoViewer(id)};
+window.deleteBatchPhoto=(id,index)=>{const b=db.batches.find(x=>x.id===id);if(!b||!b.photos||!b.photos[index])return;if(!confirm('確定刪除這張批次照片？'))return;const removed=b.photos.splice(index,1)[0];if(!save()){b.photos.splice(index,0,removed);return}renderBatchPhotoViewer(id)};
 
 function calculate(){let r=db.recipes.find(x=>x.id===$('which').value),kg=+$('kg').value;if(!r||!(kg>0))return;calc={r,kg,groups:r.groups.map(g=>({name:g.name,items:g.items.map(x=>[x[0],x[1]*kg/r.base,x[2]])}))};$('calcOut').innerHTML='<p class="muted">換算倍率 '+(kg/r.base).toFixed(6)+' 倍；不修改原始配方。</p>'+calc.groups.map(g=>'<div class="group">'+esc(g.name)+'</div><table>'+g.items.map(x=>'<tr><td>'+esc(x[0])+'</td><td>'+fmt(x[1])+' '+x[2]+'</td></tr>').join('')+'</table>').join('')}
 $('kg').oninput=calculate;$('which').onchange=calculate;
@@ -107,7 +107,7 @@ $('compare').onclick=()=>{let a=db.recipes.find(x=>x.id===$('vA').value),b=db.re
 function batchPDF(id){let b=db.batches.find(x=>x.id===id),w=window.open('','_blank');if(!w)return alert('請允許開啟彈出視窗');w.document.write('<meta charset="utf-8"><h2>醃製生產批次報表</h2><p>'+esc(b.code)+'｜'+esc(b.date)+'｜'+esc(b.name)+'｜'+b.kg+'kg</p><p>配方版本：'+esc(b.version)+'</p>'+b.groups.map(g=>'<h3>'+esc(g.name)+'</h3><table border="1" cellpadding="7">'+g.items.map(x=>'<tr><td>'+esc(x[0])+'</td><td>'+fmt(x[1])+' '+x[2]+'</td></tr>').join('')+'</table>').join('')+'<h3>製程時間</h3><p>'+['退冰','醃製','裹粉','完成'].map(k=>k+'：'+((b.process||{})[k]||'未記錄')).join('<br>')+'</p><p>成本：'+(b.cost&&b.cost.complete?'$'+b.cost.total.toFixed(2):'待補')+'</p>'+((b.photos||[]).length?'<h3>生產照片</h3>'+b.photos.map(ph=>'<figure><img style="max-width:100%;max-height:55vh" src="'+ph.data+'"><figcaption>'+esc(ph.caption||'生產照片')+'｜'+esc(ph.createdAt||'')+'</figcaption></figure>').join(''):'')+'<script>onload=()=>print()<\\/script>');w.document.close()}
 $('pdf').onclick=()=>{if(!$('report').value)return alert('尚無批次');batchPDF($('report').value)};
 $('export').onclick=()=>{const backup={...db,backupMeta:{app:'MarinadeMaster',schemaVersion:1,exportedAt:new Date().toISOString(),photoCount:db.batches.reduce((n,b)=>n+((b.photos||[]).length),0)}};const a=document.createElement('a'),u=URL.createObjectURL(new Blob([JSON.stringify(backup,null,2)],{type:'application/json'}));a.href=u;a.download='MarinadeMaster-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)};
-$('import').onchange=e=>{const f=e.target.files&&e.target.files[0];if(!f)return;const rd=new FileReader();rd.onerror=()=>alert('無法讀取備份檔，請重新選擇。');rd.onload=()=>{try{const parsed=JSON.parse(rd.result),x=InventoryCore.validateBackup(parsed);if(confirm('即將匯入 '+x.recipes.length+' 個配方、'+x.batches.length+' 個批次、'+x.stock.length+' 項庫存。匯入會取代目前資料，請先確認已匯出現有備份。確定繼續？')){db=x;save()}}catch(err){alert('備份檔格式錯誤：'+err.message)}finally{e.target.value=''}};rd.readAsText(f)};
+$('import').onchange=e=>{const f=e.target.files&&e.target.files[0];if(!f)return;const rd=new FileReader();rd.onerror=()=>alert('無法讀取備份檔，請重新選擇。');rd.onload=()=>{try{const parsed=JSON.parse(rd.result),x=InventoryCore.validateBackup(parsed);if(confirm('即將匯入 '+x.recipes.length+' 個配方、'+x.batches.length+' 個批次、'+x.stock.length+' 項庫存。匯入會取代目前資料，請先確認已匯出現有備份。確定繼續？')){const previous=db;db=x;if(!save()){db=previous;render()}}}catch(err){alert('備份檔格式錯誤：'+err.message)}finally{e.target.value=''}};rd.readAsText(f)};
 render();
 if('serviceWorker' in navigator && location.protocol==='https:'){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(err=>console.warn('Service worker registration failed',err)))}
 </script></body></html>
