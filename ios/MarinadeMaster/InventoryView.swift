@@ -16,25 +16,26 @@ struct InventoryView: View {
                     if items.isEmpty {
                         ContentUnavailableView("尚無庫存原料", systemImage: "shippingbox", description: Text("先新增原料，再登記進貨。"))
                     }
-                    ForEach(items) { item in
-                        Button {
-                            selectedItem = item
-                        } label: {
-                            VStack(alignment: .leading, spacing: 4) {
-                                HStack {
-                                    Text(item.name).font(.headline)
-                                    Spacer()
-                                    Text("\(item.onHand.formatted()) \(item.unit)")
-                                        .foregroundStyle(item.onHand > 0 ? .primary : .orange)
+                    ForEach(items, id: \\.id) { item in
+                        HStack {
+                            Button { selectedItem = item } label: {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    HStack {
+                                        Text(item.name).font(.headline)
+                                        Spacer()
+                                        Text("\(item.onHand.formatted()) \(item.unit)")
+                                            .foregroundStyle(item.onHand > 0 ? .primary : .orange)
+                                    }
+                                    Text("平均單位成本：\(item.averageCost.formatted(.currency(code: "TWD")))/\(item.unit)")
+                                        .font(.caption).foregroundStyle(.secondary)
                                 }
-                                Text("平均單位成本：\(item.averageCost.formatted(.currency(code: "TWD")))/\(item.unit)")
-                                    .font(.caption).foregroundStyle(.secondary)
-                            }
-                        }.buttonStyle(.plain)
-                    }
-                    .onDelete { offsets in
-                        for index in offsets { context.delete(items[index]) }
-                        try? context.save()
+                            }.buttonStyle(.plain)
+                            Button(role: .destructive) {
+                                context.delete(item)
+                                try? context.save()
+                            } label: { Image(systemName: "trash") }
+                                .buttonStyle(.borderless)
+                        }
                     }
                 }
                 Section("進貨紀錄") {
