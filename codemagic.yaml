@@ -7,9 +7,10 @@ workflows:
       xcode: latest
       cocoapods: default
       vars:
-        XCODE_PROJECT: ios/MarinadeMaster.xcodeproj
-        XCODE_SCHEME: MarinadeMaster
         BUNDLE_ID: com.grost9999.marinademaster
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.grost9999.marinademaster
     triggering:
       events:
         - push
@@ -17,12 +18,6 @@ workflows:
         - pattern: main
           include: true
     scripts:
-      - name: Set up code signing
-        script: |
-          keychain initialize
-          app-store-connect fetch-signing-files "com.grost9999.marinademaster" --type IOS_APP_STORE --create
-          keychain add-certificates
-          xcode-project use-profiles
       - name: Build iOS IPA
         script: |
           xcode-project build-ipa --project ios/MarinadeMaster.xcodeproj --scheme MarinadeMaster
