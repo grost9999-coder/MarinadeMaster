@@ -4,11 +4,12 @@ workflows:
     max_build_duration: 120
     instance_type: mac_mini_m2
     environment:
-      flutter: stable
       xcode: latest
       cocoapods: default
       vars:
-        BUNDLE_ID: com.example.marinademaster
+        XCODE_PROJECT: ios/MarinadeMaster.xcodeproj
+        XCODE_SCHEME: MarinadeMaster
+        BUNDLE_ID: com.grost9999.marinademaster
     triggering:
       events:
         - push
@@ -19,12 +20,11 @@ workflows:
       - name: Set up code signing
         script: |
           keychain initialize
-          app-store-connect fetch-signing-files "com.example.marinademaster" --type IOS_APP_STORE --create
+          app-store-connect fetch-signing-files "com.grost9999.marinademaster" --type IOS_APP_STORE --create
           keychain add-certificates
           xcode-project use-profiles
-      - name: Build Flutter iOS
+      - name: Build iOS IPA
         script: |
-          flutter packages pub get
-          flutter build ipa --release --export-options-plist=/Users/builder/export_options.plist
+          xcode-project build-ipa --project ios/MarinadeMaster.xcodeproj --scheme MarinadeMaster
     artifacts:
       - build/ios/ipa/*.ipa
