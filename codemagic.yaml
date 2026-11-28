@@ -23,6 +23,6 @@ workflows:
           xcode-project use-profiles
       - name: Build iOS IPA
         script: |
-          xcode-project build-ipa --project ios/MarinadeMaster.xcodeproj --scheme MarinadeMaster --export-method app-store-connect
+          xcode-project build-ipa --project ios/MarinadeMaster.xcodeproj --scheme MarinadeMaster
     artifacts:
       - build/ios/ipa/*.ipa
